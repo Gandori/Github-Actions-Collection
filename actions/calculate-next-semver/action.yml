@@ -1,0 +1,50 @@
+name: calculate-next-semver
+description: Calculates the next semantic version based on commit messages following Conventional Commits.
+
+outputs:
+    version:
+        description: The calculated next semantic version (major.minor.patch)
+        value: ${{ steps.calculate-version.outputs.version }}
+
+runs:
+    using: 'composite'
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+          with:
+              fetch-depth: 0
+
+        - name: Get all commits
+          id: get-commits
+          shell: bash
+          run: |
+              commits=$(git log --reverse HEAD --pretty=format:"%s")
+              echo "commits<<EOF" >> "$GITHUB_OUTPUT"
+              echo "$commits" >> "$GITHUB_OUTPUT"
+              echo "EOF" >> "$GITHUB_OUTPUT"
+
+        - name: Calculate semver
+          id: calculate-version
+          shell: bash
+          run: |
+              major=0; minor=0; patch=0
+
+              while read -r line; do
+                if [[ "$line" =~ ^(feat|fix)! ]]; then
+                  major=$((major + 1))
+                  minor=0
+                  patch=0
+                  continue
+                fi
+                if [[ "$line" =~ ^feat ]]; then
+                  minor=$((minor + 1))
+                  patch=0
+                fi
+                if [[ "$line" =~ ^fix ]]; then
+                  patch=$((patch + 1))
+                fi
+              done <<< "${{ steps.get-commits.outputs.commits }}"
+
+              version="$major.$minor.$patch"
+              echo "VERSION=$version"
+              echo "version=$version" >> "$GITHUB_OUTPUT"
