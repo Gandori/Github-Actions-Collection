@@ -1,0 +1,20 @@
+name: extract-version-from-pyproject
+description: Extracts the application version from a pyproject.toml file.
+
+outputs:
+    version:
+        description: Extracted version string from the given pyproject.toml
+
+runs:
+    using: 'composite'
+    steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Extract version
+          id: extract-version
+          shell: bash
+          run: |
+              version=$(grep '^version' "pyproject.toml" | cut -d '=' -f2 | tr -d " '")
+              echo "APP_VERSION=$version"
+              echo "version=$version" >> "$GITHUB_OUTPUT"
