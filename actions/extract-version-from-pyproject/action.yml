@@ -4,6 +4,7 @@ description: Extracts the application version from a pyproject.toml file.
 outputs:
     version:
         description: Extracted version string from the given pyproject.toml
+        value: ${{ steps.extract-version.outputs.version }}
 
 runs:
     using: 'composite'
