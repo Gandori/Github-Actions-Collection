@@ -1,0 +1,49 @@
+name: check-semver-is-increment
+description: 'Check if the next semantic version is greater than the current version'
+
+inputs:
+    current_version:
+        description: 'The current version (e.g. 0.0.0)'
+        required: true
+    next_version:
+        description: 'The next version (e.g. 0.1.0)'
+        required: true
+
+runs:
+    using: 'composite'
+    steps:
+        - name: Compare versions
+          shell: bash
+          run: |
+              validate_semver() {
+                  local version="$1"
+                  if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                      echo "❌ Invalid semantic version: $version"
+                      exit 1
+                  fi
+              }
+
+              current_version=${{ inputs.current_version }}
+              next_version=${{ inputs.next_version }}
+
+              validate_semver "$current_version"
+              validate_semver "$next_version"
+
+              IFS='.' read -r -a v1_parts <<< "$current_version"
+              IFS='.' read -r -a v2_parts <<< "$next_version"
+
+              for i in 0 1 2; do
+                  n1="${v1_parts[$i]:-0}"
+                  n2="${v2_parts[$i]:-0}"
+
+                  if (( 10#$n1 < 10#$n2 )); then
+                      echo "✅ $next_version is greater than $current_version"
+                      exit 0
+                  elif (( 10#$n1 > 10#$n2 )); then
+                      echo "❌ $next_version is not greater than $current_version"
+                      exit 1
+                  fi
+              done
+
+              echo "❌ $next_version is equal to $current_version"
+              exit 1
