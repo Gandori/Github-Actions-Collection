@@ -1,0 +1,32 @@
+name: update-version-in-pyproject
+description: 'Updates the version number in pyproject.toml and pushes the change to the repository'
+
+inputs:
+    current_version:
+        description: 'The current version (e.g. 0.0.0)'
+        required: true
+    next_version:
+        description: 'The next version (e.g. 0.1.0)'
+        required: true
+
+runs:
+    using: 'composite'
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Update app version in pyproject.toml
+          run: sed -i "s#version = .*#version = '${{ inputs.next_version }}'#" pyproject.toml
+
+        - name: Set up Git
+          run: |
+              git config --global user.name "github-actions"
+              git config --global user.email "github-actions@github.com"
+
+        - name: Commit changes
+          env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          run: |
+              git add pyproject.toml
+              git commit -m "Update app version from ${{ inputs.current_version }} to ${{ inputs.next_version }}"
+              git push
